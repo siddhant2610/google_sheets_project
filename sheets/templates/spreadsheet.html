@@ -1,0 +1,557 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>
+        Google Sheets Clone
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <style>
+        .cell {
+            min-width: 50px;
+            height: 30px;
+            border: 1px solid #e0e0e0;
+            padding: 4px;
+            text-align: left;
+            position: relative;
+        }
+
+        .cell:focus {
+            outline: none;
+            border: 1px solid #4a90e2;
+        }
+
+        .resizer {
+            width: 5px;
+            height: 100%;
+            position: absolute;
+            right: 0;
+            top: 0;
+            cursor: col-resize;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .button-nav {
+            border: none;
+
+        }
+
+        .button-nav:hover {
+            background-color: rgb(223, 223, 223);
+        }
+
+        .header-cell {
+            min-width: 50px;
+            height: 30px;
+            border: 1px solid #e0e0e0;
+            padding: 4px;
+            text-align: center;
+            background-color: #f3f4f6;
+            position: relative;
+        }
+
+        .selected {
+            background-color: #d1e7fd;
+        }
+
+        .nav {
+            background-color: #f0f4f9;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .share {
+            max-width: 300px;
+            text-align: center;
+            border: 2px solid black;
+            font-size: 15px;
+            font-family: sans-serif;
+            padding: 10px;
+            margin: 0 auto;
+            /* Horizontally centers the container */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            /* Centers the container vertically and horizontally */
+        }
+
+        .share p {}
+    </style>
+</head>
+
+<body class="bg-white">
+    <div class="flex flex-col items-center">
+        <div class="w-full max-w-5xl">
+            <div class="flex flex-col items-start bg-gray-100 p-2 border-b border-gray-300 nav-bar">
+                <div class="flex items-center mb-2">
+                    <img alt="Google Sheets Icon" class="mr-2" width="30px" height="30px"
+                        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMwAAADACAMAAAB/Pny7AAAAdVBMVEX///80qFMYgDgnpUrh8OVqu34rpUxXtG7u9/BEr2IwqFHy+vS12731+vYeo0TU6tmAxZF6wYqRzJ+r2Lai0q294cVkuXjc7+Ewok8hjEALoDxMsGUAdhwPfjOUvZ4AfC2ew6enyK8AgiSxz7gAmivH5s+azqWeDJ3xAAADPUlEQVR4nO3ca3OaQBiGYeQsJwEPtBCatA3+/59YdNrQTLIDMu9ho8/9eQe5BlxEXRznYctJ05TEu+xQl3RVmRqnyU5hW5D260VJk0WFl2xo+/70Q4OSn4uCWHLB9CqauqA+KleM6z7La/Yhh+WC6XtpTROFHJYLRl5T81iuGLeXPdN2kceIcWVngYyH8g/juk+C15uaYVZ+h+nlNGnJdJa9YS4aIYxfsWPkNH7Aj7m8b+4I0z+LaGQwQldPIcyoebkfjMiZJoaRmNPkMKPm5/1g+DWSGHaNKIZbI4th1ghjeGdoaYzbu3wacQynRh4znmlc7xsFDN8soIFh06hgRs3v+8EwHRslDI9GC8Myp6lhxntPco0eZrx6UmsUMfQaTcx4ptHO0KoY6uuNLoZYo4yh1WhjSDXqGEqNPmb8LEClsQBDd72xAUOmsQJDpeHDfLulMNpZjbkpYIARCBhgBAIGGIGAAUYgYIARCBhgBAIGGIGAuQGTeAyZ1uowY5KurMgrI8OKMGaMVzspefnB8Gr8GIb2htU6wHwImPUBszhg1gfM4h4Okx8PpvbTloazcdC06NQCTNUaPje23bQl46BiG1uFMS0Z9qJpS6VpUNjZhTHdJoTAAAMMMMAAAwwwXwITvLaf97qdtmQetLEJ4+yOpoZFg2y6BSAMmMUBsz5gFgfM+oBZHDDr08fkgemxtO+/BDQ9hfaevgT07PrUfFe3AMAAAwwwwAADzENijD8k/4ep2vBL/Np8jk6fF1XTloyDTlVqEcbxG1P+NCg2DmqmQRZg6AJmccCsD5jFAbM+YBb3GJgwOGb0VYY1J+yLgRKGTK8FzC0YyYABRiBggBEIGGAEAgYYgYABRiBggBEIGGAEAgYYgYABRiBggBEIGGAEAgYYgYCxFnOiwMTGVUuieYE/v6+z5bUVmKKK5/d1voPpCaqieWcKizN0FmiS7ZEE45QWzABekM7v6JKGrfqhSTYZjcVxavVD45X5/G4uK9WenYsTxbz8N79sFc+0pA2a+X1cXnzeFMb/tTFTik1NeFyuDXXSFl4onFe0STWQvV/eSptjHXRb0bqgzHYkV/6P5XksXE5/UL5KfwACB+F55P9cPAAAAABJRU5ErkJggg==" />
+                    <span class="text-lg font-semibold">
+                        GOOGLE_SHEET_MIMIC
+                    </span>
+                </div>
+                <div class="flex space-x-4 ml-4">
+                    <div class="dropdown">
+                        <span class="text-sm cursor-pointer">
+                            File
+                        </span>
+                        <div class="dropdown-content">
+                            <a href="#" onclick="openFile()">Open</a>
+                            <a href="#" onclick="importFile()">Import</a>
+                            <a href="#" onclick="makeCopy()">Make a copy</a>
+                            <a href="#" onclick="share()">Share</a>
+                            <a href="#" onclick="saveSheet()">Save</a>
+                        </div>
+                    </div>
+                    <span class="text-sm">
+                        Edit
+                    </span>
+                    <span class="text-sm">
+                        View
+                    </span>
+                    <span class="text-sm">
+                        Insert
+                    </span>
+                    <span class="text-sm">
+                        Format
+                    </span>
+                    <span class="text-sm">
+                        Data
+                    </span>
+                    <span class="text-sm">
+                        Tools
+                    </span>
+                    <span class="text-sm">
+                        Add-ons
+                    </span>
+                    <span class="text-sm">
+                        Help
+                    </span>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center space-x-2 nav">
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded"
+                    onclick="changeFontSize('increase')">
+                    +
+                </button>
+                <span id="fontSizeDisplay" class="text-sm border border-gray-300 px-2 py-1">14</span>
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded"
+                    onclick="changeFontSize('decrease')">
+                    -
+                </button>
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded button-nav"
+                    onclick="toggleBold()">
+                    <b>B</b>
+                </button>
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded button-nav"
+                    onclick="toggleItalic()">
+                    <i>I</i>
+                </button>
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded button-nav"
+                    onclick="calculate('SUM')">
+                    SUM
+                </button>
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded button-nav"
+                    onclick="calculate('AVERAGE')">
+                    AVERAGE
+                </button>
+                <button class="button-nav bg-white text-black border border-gray-300 px-2 py-0.3 rounded"
+                    onclick="calculate('MAX')">
+                    MAX
+                </button>
+                <button class="button-nav bg-white text-black border border-gray-300 px-2 py-0.3 rounded"
+                    onclick="calculate('MIN')">
+                    MIN
+                </button>
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded button-nav"
+                    onclick="calculate('COUNT')">
+                    COUNT
+                </button>
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded button-nav"
+                    onclick="dataQuality('TRIM')">
+                    TRIM
+                </button>
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded button-nav"
+                    onclick="dataQuality('UPPER')">
+                    UPPER
+                </button>
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded button-nav"
+                    onclick="dataQuality('LOWER')">
+                    LOWER
+                </button>
+                <button class="bg-white text-black border border-gray-300 px-2 py-0.3 rounded button-nav"
+                    onclick="dataQuality('REMOVE_DUPLICATES')">
+                    REMOVE DUPLICATES
+                </button>
+            </div>
+            <div class="mt-4 flex items-center space-x-2">
+                <input id="formulaBar" class="w-full border border-gray-300 px-2 py-1"
+                    placeholder="Enter formula here" />
+            </div>
+            <div class="flex flex-col border border-gray-300 mt-4">
+                <div class="flex bg-gray-100 border-b border-gray-300">
+                    <div class="w-8 h-8 border-r border-gray-300">
+                    </div>
+                    <div class="header-cell">
+                        A
+                        <div class="resizer">
+                        </div>
+                    </div>
+                    <div class="header-cell">
+                        B
+                        <div class="resizer">
+                        </div>
+                    </div>
+                    <div class="header-cell">
+                        C
+                        <div class="resizer">
+                        </div>
+                    </div>
+                    <div class="header-cell">
+                        D
+                        <div class="resizer">
+                        </div>
+                    </div>
+                    <div class="header-cell">
+                        E
+                        <div class="resizer">
+                        </div>
+                    </div>
+                    <div class="header-cell">
+                        F
+                        <div class="resizer">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col" id="sheet">
+                    <!-- Rows will be dynamically added here -->
+                </div>
+            </div>
+            <input class="border border-gray-300 p-2 mt-4" id="rowCountInput" placeholder="Number of rows"
+                type="number" />
+            <button class="bg-white-500 text-black px-4 py-2 rounded" onclick="addRows()">
+                Add Rows
+            </button>
+
+        </div>
+    </div>
+
+    <script>
+        let rowCount = 0;
+        let selectedCells = [];
+        let currentFontSize = 14;
+
+        function share() {
+            // Options for sharing
+            const options = `
+                Choose a sharing method:
+                1. Email
+                2. WhatsApp
+                3. Download for Google Drive
+            `;
+
+            const choice = prompt(options);
+
+            switch (choice) {
+                case '1': // Share via Email
+                    const subject = "Shared Sheet";
+                    const body = encodeURIComponent("Here's the data from the sheet:\n\n" + exportSheetData());
+                    const mailtoLink = `mailto:?subject=${subject}&body=${body}`;
+                    window.location.href = mailtoLink;
+                    break;
+
+                case '2': // Share via WhatsApp
+                    const whatsappBody = encodeURIComponent("Here's the data from the sheet:\n\n" + exportSheetData());
+                    const whatsappLink = `https://wa.me/?text=${whatsappBody}`;
+                    window.open(whatsappLink, '_blank');
+                    break;
+
+                case '3': // Download for Google Drive
+                    const data = exportSheetData();
+                    const blob = new Blob([data], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'sheet.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    alert("Download complete! You can manually upload the file to Google Drive.");
+                    break;
+
+                default:
+                    alert("Invalid choice! Please try again.");
+            }
+        }
+
+        // Export sheet data as CSV string
+        function exportSheetData() {
+            const sheet = document.getElementById('sheet');
+            let data = '';
+
+            // Loop through rows and cells
+            Array.from(sheet.children).forEach(row => {
+                Array.from(row.children).forEach(cell => {
+                    if (cell.tagName === 'INPUT') {
+                        data += cell.value + ',';
+                    }
+                });
+                data += '\n'; // New line for each row
+            });
+
+            return data;
+        }
+
+
+        function addRow() {
+            const sheet = document.getElementById('sheet');
+            const row = document.createElement('div');
+            row.className = 'flex';
+            const rowNumber = document.createElement('div');
+            rowNumber.className = 'w-8 h-8 border-r border-b border-gray-300 flex items-center justify-center';
+            rowNumber.textContent = ++rowCount;
+            row.appendChild(rowNumber);
+            for (let i = 0; i < 6; i++) {
+                const cell = document.createElement('input');
+                cell.className = 'cell';
+                cell.type = 'text';
+                cell.addEventListener('keydown', handleKeyNavigation);
+                cell.addEventListener('click', handleCellSelection);
+                const resizer = document.createElement('div');
+                resizer.className = 'resizer';
+                cell.appendChild(resizer);
+                row.appendChild(cell);
+            }
+            sheet.appendChild(row);
+        }
+
+        function addRows() {
+            const rowCountInput = document.getElementById('rowCountInput').value;
+            const rowsToAdd = parseInt(rowCountInput, 10);
+            for (let i = 0; i < rowsToAdd; i++) {
+                addRow();
+            }
+        }
+
+
+
+
+        
+
+
+
+
+
+
+        function calculate(operation) {
+            let values = [];
+            selectedCells.forEach(cell => {
+                const value = parseFloat(cell.value);
+                if (!isNaN(value)) {
+                    values.push(value);
+                }
+            });
+
+            let result;
+            switch (operation) {
+                case 'SUM':
+                    result = values.reduce((a, b) => a + b, 0);
+                    break;
+                case 'AVERAGE':
+                    result = values.reduce((a, b) => a + b, 0) / values.length;
+                    break;
+                case 'MAX':
+                    result = Math.max(...values);
+                    break;
+                case 'MIN':
+                    result = Math.min(...values);
+                    break;
+                case 'COUNT':
+                    result = values.length;
+                    break;
+            }
+            document.getElementById('formulaBar').value = `${operation}: ${result}`;
+            // alert(`${operation}: ${result}`);
+        }
+
+        function dataQuality(operation) {
+            selectedCells.forEach(cell => {
+                switch (operation) {
+                    case 'TRIM':
+                        cell.value = cell.value.trim();
+                        break;
+                    case 'UPPER':
+                        cell.value = cell.value.toUpperCase();
+                        break;
+                    case 'LOWER':
+                        cell.value = cell.value.toLowerCase();
+                        break;
+                    case 'REMOVE_DUPLICATES':
+                        removeDuplicates();
+                        break;
+                }
+            });
+        }
+
+        function changeFontSize(action) {
+            selectedCells.forEach(cell => {
+                const newSize = action === 'increase' ? currentFontSize + 2 : currentFontSize - 2;
+                cell.style.fontSize = `${newSize}px`;
+            });
+            currentFontSize = action === 'increase' ? currentFontSize + 2 : currentFontSize - 2;
+            document.getElementById('fontSizeDisplay').textContent = currentFontSize;
+        }
+
+        function toggleBold() {
+            selectedCells.forEach(cell => {
+                cell.style.fontWeight = cell.style.fontWeight === 'bold' ? 'normal' : 'bold';
+            });
+        }
+
+        function toggleItalic() {
+            selectedCells.forEach(cell => {
+                cell.style.fontStyle = cell.style.fontStyle === 'italic' ? 'normal' : 'italic';
+            });
+        }
+
+        function initResizers() {
+            const resizers = document.querySelectorAll('.resizer');
+            let currentResizer;
+
+            for (let resizer of resizers) {
+                resizer.addEventListener('mousedown', function (e) {
+                    currentResizer = e.target;
+                    document.addEventListener('mousemove', resize);
+                    document.addEventListener('mouseup', stopResize);
+                });
+            }
+
+            function resize(e) {
+                const cell = currentResizer.parentElement;
+                cell.style.width = e.pageX - cell.getBoundingClientRect().left + 'px';
+            }
+
+            function stopResize() {
+                document.removeEventListener('mousemove', resize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        }
+
+        function handleKeyNavigation(e) {
+            const cell = e.target;
+            const row = cell.parentElement;
+            const sheet = row.parentElement;
+            const cellIndex = Array.from(row.children).indexOf(cell);
+            const rowIndex = Array.from(sheet.children).indexOf(row);
+
+            switch (e.key) {
+                case 'ArrowRight':
+                    if (cellIndex < row.children.length - 1) {
+                        row.children[cellIndex + 1].focus();
+                    }
+                    break;
+                case 'ArrowLeft':
+                    if (cellIndex > 1) {
+                        row.children[cellIndex - 1].focus();
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (rowIndex < sheet.children.length - 1) {
+                        sheet.children[rowIndex + 1].children[cellIndex].focus();
+                    }
+                    break;
+                case 'ArrowUp':
+                    if (rowIndex > 0) {
+                        sheet.children[rowIndex - 1].children[cellIndex].focus();
+                    }
+                    break;
+                case 'Shift':
+                    handleCellSelection(e);
+                    break;
+            }
+        }
+
+        function handleCellSelection(e) {
+            const cell = e.target;
+            if (e.shiftKey) {
+                cell.classList.toggle('selected');
+                if (cell.classList.contains('selected')) {
+                    selectedCells.push(cell);
+                } else {
+                    selectedCells = selectedCells.filter(selectedCell => selectedCell !== cell);
+                }
+            } else {
+                selectedCells.forEach(selectedCell => selectedCell.classList.remove('selected'));
+                selectedCells = [cell];
+                cell.classList.add('selected');
+            }
+        }
+
+        function saveSheet() {
+            const sheet = document.getElementById('sheet');
+            const rows = Array.from(sheet.children);
+            const data = rows.map(row => {
+                const cells = Array.from(row.children).slice(1);
+                return cells.map(cell => cell.value);
+            });
+
+            const csvContent = data.map(e => e.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "sheet_data.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function openFile() {
+            alert("Open file functionality is not implemented yet.");
+        }
+
+        function importFile() {
+            alert("Import file functionality is not implemented yet.");
+        }
+
+        
+    </script>
+
+
+</body>
+
+</html>

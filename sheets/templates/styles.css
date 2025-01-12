@@ -1,0 +1,16 @@
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 5px;
+}
+
+.selected {
+    background-color: lightgray; 
+}
+
+.controls {
+    margin-top: 20px;
+}
